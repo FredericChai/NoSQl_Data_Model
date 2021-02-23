@@ -1,0 +1,65 @@
+##SQ1
+match (q_u:User)-[r1:questioned]->(question:Post{id:'1'})<-[r2:belong]-(answer:Post)<-[r3:answered]-(a_u:User)
+            return q_u.CreationDate,q_u.DisplayName,q_u.UpVotes,q_u.DownVotes,
+            a_u.CreationDate,a_u.DisplayName,a_u.UpVotes,a_u.DownVotes
+
+##SQ2  
+match (q:Post{PostTypeId:'1'}) where 'deep-network' in q.Tags return q order by q.ViewCount DESC limit 1
+
+##AQ6 
+match (u:User{id:'4398'})-[*2..3]->(a:Post)<--(u1:User) 
+where u1.id<>'4398'
+return u1.id as CoAuthor,count(Distinct a) as coopTime
+order by coopTime DESC limit 5
+
+##AQ5 
+match (questionVote:Vote{VoteTypeId:'2'})-->(ques:Post{PostTypeId:'1'})
+	with ques,count(questionVote) as quesVote
+        where quesVote > 10
+        with ques as q
+match (allAnswerVote:Vote{VoteTypeId:'2'})-->(allAnswer:Post{PostTypeId:'2'})-[:belong]->(q)-[:accept]->(acceptedAnswer:Post{PostTypeId:'2'})  
+        with q,q.id as questionId,allAnswer.id as allAnswer,count(allAnswerVote) as 			numVote, acceptedAnswer.id as acceptedId 
+        order by questionId,numVote DESC 
+        with questionId,collect(numVote)[0] as highestUpvote,collect(allAnswer)[0] as 			HighestAnswer,collect(acceptedId)[0] as acceptedAnswerId 
+match (p:Post{PostTypeId:'2'})<--(acceptVote:Vote{VoteTypeId:'2'})
+		where p.id=acceptedAnswerId
+        with questionId,highestUpvote,acceptedAnswerId,count(acceptVote) as AcceptedUpvote
+        where AcceptedUpvote<highestUpvote
+        return questionId,highestUpvote,AcceptedUpvote
+
+##AQ3. 7ms
+match (t:Tag)<--(q:Post{PostTypeId:'1'})-[:accept]->(a:Post)<--(u:User)
+where t.id="deep-learning"
+with t,count(a) as acceptedAnswerNUM,u
+order by acceptedAnswerNUM DESC limit 1
+with t,acceptedAnswerNUM,u
+match (t)<--(q:Post{PostTypeId:'1'})-[:accept]->(a:Post)<--(u)
+return q.id as id,q.Title as title order by id
+
+
+----------------Code below are used to compare with mongoDB
+
+
+##AQ1
+match (t:Tag)<--(q:Post{PostTypeId:'1'})<--(a:Post{PostTypeId:'2'}) where t.id in ["deep-network","machine-learning","turing-test"] 
+with t,duration.between(q.CreationDate,a.CreationDate) as answerDuration,q 
+with t,min(answerDuration) as shortestAnsTime,min(q) as easiest_question
+return t as topic,shortestAnsTime,easiest_question.id
+
+
+##AQ2 42ms
+match (u:User)-->(p:Post)-->(t:Tag)
+where p.CreationDate>datetime("2018-08-01T00:00:00") and p.CreationDate<datetime("2018-08-31T00:00:00") 
+with t,u 
+return t as topic,count(DISTINCT u) as userNumber order by userNumber DESC limit 5
+
+
+
+#AQ4
+match (u:User{id:'4398'})-[:answered]->(p:Post{PostTypeId:'2'})<-[:accept]-(q:Post{PostTypeId:'1'})-->(t:Tag)
+where q.CreationDate<datetime('2018-08-30T00:00:00')
+with t.id as tag,count(p) as answeredTimes order by answeredTimes DESC limit 4
+with collect(tag) as relatedTag
+match (q:Post{PostTypeId:'1'})-->(t:Tag)
+where NOT exists(q.AcceptedAnswerId) and t.id in relatedTag and q.CreationDate<datetime('2018-08-30T00:00:00')
+return Distinct q.Title as title,q.id as id,q.CreationDate as date order by date DESC limit 5

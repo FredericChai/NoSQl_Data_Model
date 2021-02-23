@@ -1,0 +1,76 @@
+'''
+import data
+'''
+#Import post
+load csv with headers from "file:///post.csv" as line create (:Post{
+	id:line.Id,
+	PostTypeId:line.PostTypeId,
+	AcceptedAnswerId:line.AcceptedAnswerId,
+	CreationDate:line.CreationDate,
+	ViewCount:line.ViewCount,
+	OwnerUserId:line.OwnerUserId,
+	Title:line.Title,
+	Tags:line.Tags,
+	ParentId:line.ParentId
+})
+#Import user
+load csv with headers from "file:///user.csv" as line create (:User{
+	id:line.Id,
+	CreationDate:line.CreationDate,
+	DisplayName:line.DisplayName,
+	UpVotes:line.UpVotes,
+	DownVotes:line.DownVotes
+})
+#Import vote
+load csv with headers from "file:///vote.csv" as line create (:Vote{
+	id:line.Id,
+	PostId:line.PostId,
+	VoteTypeId:line.VoteTypeId
+})
+#Import tag
+load csv with headers from "file:///tag.csv" as line create (:Tag{
+	id:line.topic
+})
+
+
+'''
+Create relationship
+'''
+
+#Relationship between question and user
+match (u:User),(q:Post{PostTypeId:'1'}) 
+where q.OwnerUserId=u.id 
+create (u)-[r:questioned]->(q) return r 
+
+#Relationship between answer and user
+match (u:User),(p:Post{PostTypeId:'2'}) 
+where u.id=p.OwnerUserId 
+create (u)-[r:answered]->(p) return r
+
+#Relationship between question and answer
+MATCH  (q:Post{PostTypeId:'1'}) with q Match (a:Post{PostTypeId:'2'}) where q.id=a.ParentId create (a)-[r:belong]->(q) return r
+
+MATCH  (q:Post{PostTypeId:'1'}) with q Match (a:Post{PostTypeId:'2'}) where q.id=a.ParentId create (a)<-[r:belong]-(q) return r
+
+#Relationship between accepted answer and question
+match (q:Post{PostTypeId:'1'}) with q match (a:Post{PostTypeId:'2'}) where q.AcceptedAnswerId=a.id create (q)-[r:accept]->(a) return r
+
+#Relationship between vote and post
+match (p:Post) with p match (v:Vote) where v.PostId=p.id create (v)-[r:voted]->(p) return r
+
+#Relationship between question and tags
+match (q:Post{PostTypeId:'1'}) with q match (t:Tag) 
+where t.id in q.Tags create (q)-[r:have]->(t) return r
+
+#Relationship between answer and tags
+match (a:Post{PostTypeId:'2'})-->(q:Post{PostTypeId:'1'})-[:have]->(t:Tag) with a,t create (a)-[r:have]->(t) return r
+
+#update the creationdate type in post
+match (p:Post)
+set p.CreationDate = datetime(p.CreationDate)
+
+#convert tags find to array
+match (p:Post) set p.Tags = split(p.Tags,’,')
+
+#convert viewpoint to integer
+match (p:Post{PostTypeId:'1'}) set p.ViewCount = toInteger(p.ViewCount)

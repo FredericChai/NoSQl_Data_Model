@@ -1,0 +1,68 @@
+SQ1
+db.Post.aggregate([
+{"$match":{"$or":[{"ParentId":id},  
+                                  {"Id":id}]}},     
+        {"$group":{"_id":"$OwnerUserId"}}
+
+])
+
+SQ2
+db.Post.aggregate([
+{"$match":{"Id":{"$in":['101','4','1']},"PostTypeId":"1"}}, 
+        {"$sort":{"ViewCount":-1}},
+        {"$limit":1},
+        {"$project":{"_id":"$Id","ViewCount":1,"Title":1,"Tags":1}}
+])
+
+
+db.Post.aggregate([
+ {"$match":{"CreationDate":{"$gte":ISODate("2018-08-01T00:00:00.000Z"),"$lte":ISODate("2018-08-31T00:00:00.000Z")}}},
+        {"$unwind":"$Tags"},
+        {"$group":{"_id":"$Tags","engage_user":{"$addToSet":"$OwnerUserId"}}},
+        {"$project":{"_id":1,"NumOfUser":{"$size":"$engage_user"}}},
+        {"$sort":{"NumOfUser":-1}},
+        {"$limit":5}
+])
+
+
+AQ2
+db.getCollection('Post').aggregate([
+     {"$match":{"CreationDate":{"$gte":ISODate("2016-08-01T00:00:00.000Z"),"$lte":ISODate("2016-08-31T00:00:00.000Z")}}},
+        {"$unwind":"$Tags"},
+        {"$group":{"_id":"$Tags","engage_user":{"$addToSet":"$OwnerUserId"}}},
+        {"$project":{"_id":1,"NumOfUser":{"$size":"$engage_user"}}},
+        {"$sort":{"NumOfUser":-1}},
+        {"$limit":5}
+])
+    
+
+AQ1 
+db.Post.aggregate([
+	{"$match":{"Id":{"$in":['101','4','1']},"PostTypeId":"1"}},
+        {"$lookup":{"from":"Post","localField":"Id","foreignField":"ParentId","as":"Answer"}},
+        {"$project":{"_id":"$Id","CreationDate":1,"Title":1,"AnswerTime":"$Answer.CreationDate"}},
+        {"$unwind":"$AnswerTime"},
+        {"$project":{"_id":"$_id","Title":1,
+                    "Shortest_Ans_Minutes":{"$divide":[{"$subtract":["$AnswerTime","$CreationDate"]},60000]}
+        }},
+        {"$sort":{"Shortest_Ans_Minutes":1}},
+        {"$limit":1}
+])
+
+
+
+
+AQ4 Index
+db.getCollection('Post').explain().aggregate([
+    {"$match":{"AcceptedAnswerId":{"$ne":''},"PostTypeId":"1"}},
+        {"$lookup":{"from":"Post","localField":"AcceptedAnswerId","foreignField":"Id","as":"Anwer"}}, 
+        {"$project":{"_id":1,"Tags":1,"accepted_user":"$Anwer.OwnerUserId"}}, 
+        {"$match":{"accepted_user":'4398'}},
+        {"$unwind":"$accepted_user"},
+        {"$unwind":"$Tags"},
+        {"$group":{"_id":"$Tags","Number_of_AccpetedAnswer":{"$sum":1}}}, 
+        {"$match":{"Number_of_AccpetedAnswer":{"$gte":4}}},
+        {"$sort":{"Number_of_AccpetedAnswer":-1}},
+        {"$limit":5}  
+])
+    

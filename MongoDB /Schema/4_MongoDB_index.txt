@@ -1,0 +1,9 @@
+
+db.Post.createIndex({"Id":1})
+db.Post.createIndex({"ParentId":1})
+db.Post.createIndex({"CreationDate":1})
+db.Post.createIndex({"OwnerUserId":1})
+db.Post.createIndex({"PostTypeId":1,"Id":1})
+db.Post.createIndex({"PostTypeId":1,"ParentId":1})
+db.Post.createIndex({"Id":1,"PostTypeId":1,"ViewCount":-1})
+db.Post.createIndex({"PostTypeId":1,"AcceptedAnswerId":1})

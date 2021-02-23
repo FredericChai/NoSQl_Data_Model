@@ -1,0 +1,6 @@
+mongoimport --jsonArray --db Assignment --collection Posts_New --file /Users/chaizhizhi/Desktop/5338_data/json_data/Post.json
+
+mongoimport --jsonArray --db Assignment --collection Votes --file /Users/chaizhizhi/Desktop/5338_data/json_data/Vote.json
+
+mongoimport --jsonArray --db Assignment --collection Users --file /Users/chaizhizhi/Desktop/5338_data/json_data/Users.json
+

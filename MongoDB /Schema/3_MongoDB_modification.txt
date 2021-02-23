@@ -1,0 +1,49 @@
+
+“”“”
+1 Create a new collection called topics，put all question id under the same topic in an array
+"""
+
+db.getCollection('Post').aggregate([
+    {$match:{'$PostTypeId':1}},
+    {$project:{_id:1,Tags:"$Tags"}},
+    {$unwind:"$Tags"}
+    {$group:{
+        _id:"$Tags",
+        question:{$addToSet:"$_id"}
+        }},
+    {$out:"Topic"}])
+
+
+""""
+2 Modify the user collection 
+""""
+db.getCollection('Users').aggregate([
+  {$project:{_id:"$Id",CreationDate:1,DisplayName:1,UpVotes:1,DownVotes:1}},
+  {$out:"Users"}])
+
+
+"""
+3 Update the 'CreationDate' type to Date type in Post collection
+"""
+db.Post.find().forEach(function(doc){ doc.CreationDate = new ISODate(doc.CreationDate); db.Posts_New.save(doc) });
+
+
+"""
+4 Delte the useless field in collection 
+"""
+db.Posts.update({"PostTypeId":"1"},{$unset:{"ParentId":1}},false,true)
+db.Posts.update({"PostTypeId":"2"},{$unset:{"ViewCount":1}},false,true)
+db.Posts.update({"PostTypeId":"2"},{$unset:{"AcceptedAnswerId":1}},false,true)
+db.Posts.update({"PostTypeId":"2"},{$unset:{"Title":1}},false,true)
+
+"""
+5 Update the ViewCount field in Pst collection
+"""
+db.post_question.find({}).forEach(
+  function(x) {
+    x.ViewCount = parseInt(x.ViewCount) ;//将String转为Int
+    db.post_question.save(x); 
+  })
+
+
+
