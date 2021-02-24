@@ -17,6 +17,7 @@ There are some sample result already contained in the QueryCode.ipynb file. The 
 # Schema design in MongoDB example
 
 ![image](https://github.com/FredericChai/NoSQl_Data_Model/blob/master/src/1.jpg)
+
 Posts collection: It contains both question and answer which would be identified by PostTypeId.
 Question collection: the dataset would be identified as question if PostTypeId is 1, which contains id(string), PostTypeId(string), AcceptAnswerId(string), CreationDate(date), ViewCount(int), OwnerUserId(string), Title(string), Tags(string). Id would be identified as Primary key and AcceptAnswerId would be DBRefs reference to answer collection; OwneruserId would be DBRefs reference to Users collection; Tags would be DBRefs reference to Tags collection. 
 Answer collection: the dataset would be identified as question if PostTypeId is 2, which contains id(string), PostTypeId(string), ParentId(string), CreationDate(date), OwnerUserId(string), Tags(string). Id would be identified as Primary key and ParentId would be DBRefs reference to question collection; OwneruserId would be DBRefs reference to Users collection; Tags would be f DBRefs reference to Tags collection.  2)Topic collection is evolved from tags collection, containing _id and question.
